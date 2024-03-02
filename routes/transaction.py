@@ -16,7 +16,6 @@ class NewTransaction(BaseModel):
     number: str = Field(exclude=False, title="number")
     fuel_quantity: int = Field(exclude=False, title="fuel_quantity")
     fuel_type: int = Field(exclude=False, title="fuel_type")
-    date: str = Field(exclude=False, title="date")
     station_id: int = Field(exclude=False, title="station_id")
 
 # pylint: disable=E0213,C0115,C0116,W0718
@@ -88,7 +87,7 @@ def init_transactions_routes(app: FastAPI):
             new_transaction.fuel_quantity = data.fuel_quantity
             new_transaction.fuel_type = data.fuel_type
             new_transaction.price = fuel_result.value.price * new_transaction.fuel_quantity
-            new_transaction.date = datetime.datetime.fromisoformat(data.date)
+            new_transaction.date = datetime.datetime.now()
             new_transaction.station_id = data.station_id
             result = await new_transaction.add(session)
             if result.is_error is True:
