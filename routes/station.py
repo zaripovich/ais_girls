@@ -41,7 +41,7 @@ class StationsResponse(BaseModel):
 def init_stations_routes(app: FastAPI):
 
 
-    @app.get("/stations/get/id/{id}", response_model=StationResponse)
+    @app.get("/stations/get_by_id/{id}", response_model=StationResponse)
     async def get_by_id(
         id: int,
         session: AsyncSession = Depends(get_session),

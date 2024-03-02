@@ -41,7 +41,7 @@ class FuelTypesResponse(BaseModel):
 def init_fuel_type_routes(app: FastAPI):
 
 
-    @app.get("/fuel_types/get/id/{id}", response_model=FuelTypeResponse)
+    @app.get("/fuel_types/get_by_id/{id}", response_model=FuelTypeResponse)
     async def get_by_id(
         id: int,
         session: AsyncSession = Depends(get_session),
