@@ -15,7 +15,6 @@ from models.transaction import Transaction, TransactionSchema
 class NewTransaction(BaseModel):
     number: str = Field(exclude=False, title="number")
     fuel_quantity: int = Field(exclude=False, title="fuel_quantity")
-    fuel_type: int = Field(exclude=False, title="fuel_type")
     station_id: int = Field(exclude=False, title="station_id")
 
 # pylint: disable=E0213,C0115,C0116,W0718
@@ -71,21 +70,21 @@ def init_transactions_routes(app: FastAPI):
         try:
             station_result = await Station.get_by_id(session,data.station_id)
             if not station_result.is_error:
-                if station_result.value.fuel_type != data.fuel_type:
-                    return AddResponse(code=500, error_desc="Incorrect fuel type")
                 if station_result.value.fuel_quantity < data.fuel_quantity:
-                    return AddResponse(code=500, error_desc="Fuel quantity")
+                    return AddResponse(code=500, error_desc="Fuel not enough in station")
 
                 if station_result.value.status is False:
                     return AddResponse(code=500, error_desc="Station status is false")
-            fuel_result = await FuelType.get_by_id(session,data.fuel_type)
+                
+
+            fuel_result = await FuelType.get_by_id(session,station_result.value.fuel_type)
             if fuel_result.is_error:
                 return AddResponse(code=500, error_desc="Fuel Not Found")
             
             new_transaction = Transaction()
             new_transaction.number = data.number
             new_transaction.fuel_quantity = data.fuel_quantity
-            new_transaction.fuel_type = data.fuel_type
+            new_transaction.fuel_type = station_result.value.fuel_type
             new_transaction.price = fuel_result.value.price * new_transaction.fuel_quantity
             new_transaction.date = datetime.datetime.now()
             new_transaction.station_id = data.station_id
