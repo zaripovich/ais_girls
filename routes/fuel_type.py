@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Response
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -43,27 +43,33 @@ def init_fuel_type_routes(app: FastAPI):
 
     @app.get("/fuel_types/get_by_id/{id}", response_model=FuelTypeResponse)
     async def get_by_id(
+        response: Response,
         id: int,
         session: AsyncSession = Depends(get_session),
     ):
         try:
             result: DbResult = await FuelType.get_by_id(session, id)
             if result.is_error is True:
+                response.status_code = 500
                 return FuelTypeResponse(code=500, error_desc=result.error_desc)
             return FuelTypeResponse(code=200, value=FuelType.from_one_to_schema(result.value))
         except Exception as e:
+            response.status_code = 500
             return FuelTypeResponse(code=500, error_desc=str(e))
         
     
 
     @app.get("/fuel_types/get_all", response_model=FuelTypesResponse)
     async def get_all(
+        response: Response,
         session: AsyncSession = Depends(get_session),
     ):
         try:
             result: DbResult = await FuelType.get_all(session)
             if result.is_error is True:
+                response.status_code = 500
                 return FuelTypesResponse(code=500, error_desc=result.error_desc)
             return FuelTypesResponse(code=200, value=FuelType.from_list_to_schema(result.value))
         except Exception as e:
+            response.status_code = 500
             return FuelTypesResponse(code=500, error_desc=str(e))

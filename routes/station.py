@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Response
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -43,27 +43,33 @@ def init_stations_routes(app: FastAPI):
 
     @app.get("/stations/get_by_id/{id}", response_model=StationResponse)
     async def get_by_id(
+        response: Response,
         id: int,
         session: AsyncSession = Depends(get_session),
     ):
         try:
             result: DbResult = await Station.get_by_id(session, id)
             if result.is_error is True:
+                response.status_code = 500
                 return StationResponse(code=500, error_desc=result.error_desc)
             return StationResponse(code=200, value=Station.from_one_to_schema(result.value))
         except Exception as e:
+            response.status_code = 500
             return StationResponse(code=500, error_desc=str(e))
         
     
 
     @app.get("/stations/get_all", response_model=StationsResponse)
     async def get_all(
+        response: Response,
         session: AsyncSession = Depends(get_session),
     ):
         try:
             result: DbResult = await Station.get_all(session)
             if result.is_error is True:
+                response.status_code = 500
                 return StationsResponse(code=500, error_desc=result.error_desc)
             return StationsResponse(code=200, value=Station.from_list_to_schema(result.value))
         except Exception as e:
+            response.status_code = 500
             return StationsResponse(code=500, error_desc=str(e))

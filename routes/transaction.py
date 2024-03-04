@@ -2,7 +2,7 @@ import datetime
 import threading
 from typing import Optional
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Response
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -64,6 +64,7 @@ def init_transactions_routes(app: FastAPI):
         "/transactions/add", response_model=AddResponse, response_model_exclude_none=True
     )
     async def add(
+        response: Response,
         data: NewTransaction,
         session: AsyncSession = Depends(get_session),
     ):
@@ -71,14 +72,17 @@ def init_transactions_routes(app: FastAPI):
             station_result = await Station.get_by_id(session,data.station_id)
             if not station_result.is_error:
                 if station_result.value.fuel_quantity < data.fuel_quantity:
+                    response.status_code = 500
                     return AddResponse(code=500, error_desc="Fuel not enough in station")
 
                 if station_result.value.status is False:
+                    response.status_code = 500
                     return AddResponse(code=500, error_desc="Station status is false")
                 
 
             fuel_result = await FuelType.get_by_id(session,station_result.value.fuel_type)
             if fuel_result.is_error:
+                response.status_code = 500
                 return AddResponse(code=500, error_desc="Fuel Not Found")
             
             new_transaction = Transaction()
@@ -90,6 +94,7 @@ def init_transactions_routes(app: FastAPI):
             new_transaction.station_id = data.station_id
             result = await new_transaction.add(session)
             if result.is_error is True:
+                response.status_code = 500
                 return AddResponse(code=500, error_desc=result.error_desc)
 
             await Station.set_active(session,new_transaction.station_id,False)
@@ -99,43 +104,53 @@ def init_transactions_routes(app: FastAPI):
             thread.start()
             return AddResponse(code=200, value=result.value)
         except Exception as e:
+            response.status_code = 500
             return AddResponse(code=500, error_desc=str(e))
 
     @app.get("/transactions/get_by_id/{id}", response_model=TransactionResponse)
     async def get_by_id(
+        response: Response,
         id: int,
         session: AsyncSession = Depends(get_session),
     ):
         try:
             result: DbResult = await Transaction.get_by_id(session, id)
             if result.is_error is True:
+                response.status_code = 500
                 return TransactionResponse(code=500, error_desc=result.error_desc)
             return TransactionResponse(code=200, value=Transaction.from_one_to_schema(result.value))
         except Exception as e:
+            response.status_code = 500
             return TransactionResponse(code=500, error_desc=str(e))
 
     @app.get("/transactions/get_by_fuel/{id}", response_model=TransactionResponse)
     async def get_by_fuel_type(
+        response: Response,
         id: int,
         session: AsyncSession = Depends(get_session),
     ):
         try:
             result: DbResult = await Transaction.get_by_id(session, id)
             if result.is_error is True:
+                response.status_code = 500
                 return TransactionResponse(code=500, error_desc=result.error_desc)
             return TransactionResponse(code=200, value=Transaction.from_one_to_schema(result.value))
         except Exception as e:
+            response.status_code = 500
             return TransactionResponse(code=500, error_desc=str(e))
 
 
     @app.get("/transactions/get_all", response_model=TransactionsResponse)
     async def get_all(
+        response: Response,
         session: AsyncSession = Depends(get_session),
     ):
         try:
             result: DbResult = await Transaction.get_all(session)
             if result.is_error is True:
+                response.status_code = 500
                 return TransactionsResponse(code=500, error_desc=result.error_desc)
             return TransactionsResponse(code=200, value=Transaction.from_list_to_schema(result.value))
         except Exception as e:
+            response.status_code = 500
             return TransactionsResponse(code=500, error_desc=str(e))

@@ -2,7 +2,7 @@
 import datetime
 from typing import Optional
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Response
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -37,12 +37,14 @@ def init_stats_routes(app: FastAPI):
 
     @app.get("/stats/get_all_fuel", response_model=StatsResponse)
     async def get_fuel_by_date(
+        response: Response,
         data: StationDateFilter,
         session: AsyncSession = Depends(get_session),
     ):
         try:
             result_trans: DbResult = await Transaction.get_by_station_and_time(session,data.station_id,data.date_from,data.date_to)
             if result_trans.is_error is True:
+                response.status_code = 500
                 return StatsResponse(code=500, error_desc=result_trans.error_desc)
             transactions: list[Transaction] = result_trans.value
             fuel = 0.0
@@ -50,20 +52,20 @@ def init_stats_routes(app: FastAPI):
                 fuel += transaction.fuel_quantity
             return StatsResponse(code=200, value=fuel)
         except Exception as e:
+            response.status_code = 500
             return StatsResponse(code=500, error_desc=str(e))
         
     
     @app.get("/stats/get_median_price/{id}", response_model=StatsResponse)
     async def get_median_price(
+        response: Response,
         id: int,
         session: AsyncSession = Depends(get_session),
     ):
         try:
-            
-
-        
             result_trans: DbResult = await Transaction.get_by_station(session,id)
             if result_trans.is_error is True:
+                response.status_code = 500
                 return StatsResponse(code=500, error_desc=result_trans.error_desc)
             transactions: list[Transaction] = result_trans.value
             price = 0.0
@@ -73,6 +75,7 @@ def init_stats_routes(app: FastAPI):
                 price /= len(transactions)
             return StatsResponse(code=200, value=price)
         except Exception as e:
+            response.status_code = 500
             return StatsResponse(code=500, error_desc=str(e))
         
         
