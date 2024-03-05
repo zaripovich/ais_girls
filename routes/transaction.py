@@ -29,6 +29,8 @@ class AddResponse(BaseModel):
         super().__init__(code=code, error_desc=error_desc, value=value)
 
 
+
+
 # pylint: disable=E0213,C0115,C0116,W0718
 class TransactionResponse(BaseModel):
     code: int = Field(exclude=False, title="code")
@@ -72,12 +74,12 @@ def init_transactions_routes(app: FastAPI):
             station_result = await Station.get_by_id(session,data.station_id)
             if not station_result.is_error:
                 if station_result.value.fuel_quantity < data.fuel_quantity:
-                    response.status_code = 500
-                    return AddResponse(code=500, error_desc="Fuel not enough in station")
+                    response.status_code = 501
+                    return AddResponse(code=501, error_desc="Fuel not enough in station")
 
                 if station_result.value.status is False:
-                    response.status_code = 500
-                    return AddResponse(code=500, error_desc="Station status is false")
+                    response.status_code = 502
+                    return AddResponse(code=502, error_desc="Station status is false")
                 
 
             fuel_result = await FuelType.get_by_id(session,station_result.value.fuel_type)
@@ -97,8 +99,12 @@ def init_transactions_routes(app: FastAPI):
                 response.status_code = 500
                 return AddResponse(code=500, error_desc=result.error_desc)
 
-            await Station.set_active(session,new_transaction.station_id,False)
+
             await Station.set_fuel_quantity(session,new_transaction.station_id,-new_transaction.fuel_quantity)
+            await Station.set_active(session,new_transaction.station_id,False)
+            if station_result.value.fuel_quantity -new_transaction.fuel_quantity < 1000:
+                await Station.set_fuel_quantity(session,new_transaction.station_id,1000.0)
+            
 
             thread = threading.Thread(target=Station.auto_open,args=(session,data.station_id,))
             thread.start()
@@ -150,6 +156,7 @@ def init_transactions_routes(app: FastAPI):
             if result.is_error is True:
                 response.status_code = 500
                 return TransactionsResponse(code=500, error_desc=result.error_desc)
+            result.value.reverse()
             return TransactionsResponse(code=200, value=Transaction.from_list_to_schema(result.value))
         except Exception as e:
             response.status_code = 500

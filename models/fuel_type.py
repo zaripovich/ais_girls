@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import List
 
 from pydantic import BaseModel, Field
-from sqlalchemy import Column, Float, Integer, String, insert, select
+from sqlalchemy import Column, Float, Integer, String, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 from db import Base, DbResult
@@ -20,7 +20,7 @@ class FuelType(Base):
     __tablename__ = "fuel_types"
 
     id = Column(Integer, autoincrement=True, primary_key=True)
-    fuel_name = Column(String)
+    fuel_name = Column(String, unique=True)
     price = Column(Float)
 
     async def add(self, session: AsyncSession) -> DbResult:
@@ -34,6 +34,14 @@ class FuelType(Base):
         except Exception as e:
             await session.rollback()
             return DbResult.error(str(e), False)
+        
+    async def set_price(session: AsyncSession, fuel_type: int, new_price: float) -> DbResult:
+        try:
+            await session.execute(update(FuelType).where(FuelType.id == fuel_type).values(price=new_price))
+            await session.commit()
+            return DbResult.result(True)
+        except Exception as e:
+            return DbResult.error(str(e),False)
 
     async def get_by_id(session: AsyncSession, fueltype_id: int) -> DbResult:
         try:

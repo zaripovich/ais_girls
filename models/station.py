@@ -11,6 +11,7 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     Integer,
+    delete,
     insert,
     select,
     update,
@@ -94,6 +95,16 @@ class Station(Base):
             return DbResult.result(data)
         except Exception as e:
             return DbResult.error(str(e))
+        
+    async def delete(session: AsyncSession, id: int) -> DbResult:
+        try:
+            _ = await session.execute(delete(Station).where(Station.id == id))
+            await session.commit()
+            return DbResult.result(True)
+        except Exception as e:
+            await session.rollback()
+            return DbResult.error(str(e), False)
+    
 
 
     def from_one_to_schema(station: Station) -> StationSchema:
