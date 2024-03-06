@@ -35,7 +35,7 @@ class StationDateFilter(BaseModel):
 def init_stats_routes(app: FastAPI):
 
 
-    @app.get("/stats/get_all_fuel", response_model=StatsResponse)
+    @app.post("/stats/get_all_fuel", response_model=StatsResponse)
     async def get_fuel_by_date(
         response: Response,
         data: StationDateFilter,
