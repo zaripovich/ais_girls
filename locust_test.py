@@ -38,8 +38,8 @@ class Tests(TaskSet):
     def check_add(self):
        station_id = rnd.randint(1, 4)
        fuel_quantity = rnd.randint(10,50)
-       data = {"station_id": station_id, "fuel_quantity": fuel_quantity}
-       with self.client.post('/transactions/add', catch_response=True,data=data, name='/transactions/add') as response:
+       data = { "number": f"number {rnd.randint(1,50)}","station_id": station_id, "fuel_quantity": fuel_quantity}
+       with self.client.post('/transactions/add', catch_response=True,json=data, name='/transactions/add') as response:
            if response.status_code == 200:
                value = response.json().get('value')
                if value > 0:
