@@ -76,7 +76,6 @@ async def init_base_vars(engine: AsyncEngine):
         ]
         for fuel in fuels:
             fuel_temp = FuelType()
-            fuel_temp.id = None
             fuel_temp.price = fuel[0]
             fuel_temp.fuel_name = fuel[1]
             async with engine.connect() as conn:
@@ -86,12 +85,11 @@ async def init_base_vars(engine: AsyncEngine):
         
         for station in range(4):
             station_temp = Station()
-            station_temp.id = None
             station_temp.fuel_type = station+1
             station_temp.fuel_quantity = (10000 - 123*station)
             station_temp.status = True
             async with engine.connect() as conn:
-                result = await station_temp.add(conn)
+                result = await station_temp.add_first(conn)
                 if result.is_error:
                     print("Error create stations\n")
 

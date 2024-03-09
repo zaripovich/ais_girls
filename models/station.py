@@ -38,14 +38,24 @@ class Station(Base):
     fuel_quantity = Column(Float)
     status = Column(Boolean)
 
-    async def add(self, session: AsyncSession) -> DbResult:
+    async def add_first(self, session: AsyncSession) -> DbResult:
         try:
-            result = await session.execute(insert(Station).values((None,self.fuel_type,self.fuel_quantity,self.status)))
+            result = await session.execute(insert(Station).values((self.id,self.fuel_type,self.fuel_quantity,self.status)))
             if result.is_insert:
                 await session.commit()
                 return DbResult.result(self.id)
             else:
                 raise "Error"
+        except Exception as e:
+            await session.rollback()
+            return DbResult.error(str(e), False)
+        
+    
+    async def add(self, session: AsyncSession) -> DbResult:
+        try:
+            session.add(self)
+            await session.commit()
+            return DbResult.result(self.id)
         except Exception as e:
             await session.rollback()
             return DbResult.error(str(e), False)

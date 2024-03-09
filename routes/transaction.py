@@ -24,7 +24,7 @@ class AddResponse(BaseModel):
     value: Optional[int] = Field(exclude=False, title="value")
 
     def __init__(
-        self, code: int = 200, error_desc: Optional[str] = "", value: Optional[int] = 1
+        self, code: int = 200, error_desc: Optional[str] = "", value: Optional[int] = None
     ):
         super().__init__(code=code, error_desc=error_desc, value=value)
 
@@ -71,6 +71,11 @@ def init_transactions_routes(app: FastAPI):
         session: AsyncSession = Depends(get_session),
     ):
         try:
+
+            if data.fuel_quantity <= 0:
+                response.status_code = 503
+                return AddResponse(code=503, error_desc="Fuel quantity must be greater than 0")
+            
             station_result = await Station.get_by_id(session,data.station_id)
             if not station_result.is_error:
                 if station_result.value.fuel_quantity < data.fuel_quantity:

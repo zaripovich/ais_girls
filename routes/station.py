@@ -20,7 +20,7 @@ class AddResponse(BaseModel):
     value: Optional[int] = Field(exclude=False, title="value")
 
     def __init__(
-        self, code: int = 200, error_desc: Optional[str] = "", value: Optional[int] = 1
+        self, code: int = 200, error_desc: Optional[str] = "", value: Optional[int] = None
     ):
         super().__init__(code=code, error_desc=error_desc, value=value)
 
