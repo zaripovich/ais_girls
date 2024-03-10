@@ -70,7 +70,7 @@ def init_stats_routes(app: FastAPI):
             transactions: list[Transaction] = result_trans.value
             price = 0.0
             for transaction in transactions:
-                price += transaction.fuel_quantity
+                price += transaction.price
             if len(transactions):
                 price /= len(transactions)
             return StatsResponse(code=200, value=price)
